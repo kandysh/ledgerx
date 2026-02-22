@@ -14,6 +14,4 @@ yarn-error.log*
 Makefile
 README.md
 .eslintrc.json
-drizzle
 vitest.config.ts
-tsconfig.json

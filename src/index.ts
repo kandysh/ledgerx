@@ -3,17 +3,17 @@ import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
 import fastifySensible from "@fastify/sensible";
 import { ZodError } from "zod";
-import { drizzlePluginWithResolver } from "./db/index";
-import { healthRoutes } from "./modules/health.routes";
-import { paymentRoutes } from "./modules/payment.routes";
-import { walletRoutes } from "./modules/wallet/wallet.routes";
-import { env } from "./configs/env";
-import { envLogger } from "./configs/logger-config";
+import { drizzlePluginWithResolver } from "./db/index.js";
+import { healthRoutes } from "./modules/health.routes.js";
+import { paymentRoutes } from "./modules/payment.routes.js";
+import { walletRoutes } from "./modules/wallet/wallet.routes.js";
+import { env } from "./configs/env.js";
+import { envLogger } from "./configs/logger-config.js";
 import {
   AccountNotFoundError,
   InsufficientFundsError,
   ValidationError,
-} from "./lib/errors";
+} from "./lib/errors.js";
 
 const fastify = Fastify({
   logger: envLogger[env.NODE_ENV],
@@ -50,7 +50,9 @@ fastify.setErrorHandler((error, _req, reply) => {
     });
   }
   fastify.log.error(error);
-  return reply.status(500).send({ success: false, error: "Internal server error" });
+  return reply
+    .status(500)
+    .send({ success: false, error: "Internal server error" });
 });
 
 process.on("SIGTERM", async () => {

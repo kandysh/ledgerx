@@ -1,12 +1,12 @@
 import type { FastifyInstance } from "fastify";
-import { IdempotentReplayError } from "../../lib/errors";
+import { IdempotentReplayError } from "../../lib/errors.js";
 import {
   BonusRequestSchema,
   SpendRequestSchema,
   TopupRequestSchema,
-} from "./wallet.schema";
-import * as walletService from "./wallet.service";
-import { env } from "../../configs/env";
+} from "./wallet.schema.js";
+import * as walletService from "./wallet.service.js";
+import { env } from "../../configs/env.js";
 
 export async function walletRoutes(fastify: FastifyInstance) {
   fastify.addHook("onRequest", async (req, reply) => {

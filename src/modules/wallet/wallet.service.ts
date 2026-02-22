@@ -1,18 +1,18 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import { env } from "../../configs/env";
-import type { Database } from "../../db/index";
+import { env } from "../../configs/env.js";
+import type { Database } from "../../db/index.js";
 import {
   accounts,
   assetTypes,
   ledgerEntries,
   transactions,
-} from "../../db/schema";
+} from "../../db/schema.js";
 import {
   AccountNotFoundError,
   IdempotentReplayError,
   InsufficientFundsError,
-} from "../../lib/errors";
-import { mockPayment } from "../payment.routes";
+} from "../../lib/errors.js";
+import { mockPayment } from "../payment.routes.js";
 
 async function findSystemAccount(db: Database, assetTypeId: string) {
   const acct = await db.query.accounts.findFirst({

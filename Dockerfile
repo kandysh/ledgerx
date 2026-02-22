@@ -1,60 +1,53 @@
-# Stage 1: Builder
-FROM node:22-alpine AS builder
+# ---------- Base image ----------
+FROM node:24-alpine AS base
 
-# Enable corepack for pnpm
+# Enable corepack to use pnpm
 RUN corepack enable
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
+
+# ---------- Dependencies (production only) ----------
+FROM base AS deps
+
 COPY package.json pnpm-lock.yaml ./
 
-# Install all dependencies
-RUN pnpm install --frozen-lockfile
-
-# Copy source code
-COPY . /
-# Build TypeScript
-RUN pnpm run build
-
-# Stage 2: Runner
-FROM node:22-alpine AS runner
-
-# Enable corepack for pnpm
-RUN corepack enable
-
-# Set working directory
-WORKDIR /app
-
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
-
-# Install production dependencies only
+# Install only production deps
 RUN pnpm install --frozen-lockfile --prod
 
-# Copy built application from builder
-COPY --from=builder /app/dist ./dist
 
-# Copy migration SQL files needed at runtime
-COPY ./src/db/drizzle ./src/db/drizzle
+# ---------- Build stage ----------
+FROM base AS build
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-# Change ownership of app files
-RUN chown -R nodejs:nodejs /app
+# Copy source
+COPY tsconfig.json ./
+COPY src ./src
 
-# Switch to non-root user
-USER nodejs
+# Build TS -> JS
+RUN pnpm build
 
-# Expose port
+# ---------- Runner stage ----------
+
+FROM node:24-alpine AS runner
+
+RUN corepack enable
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY drizzle ./drizzle
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x docker-entrypoint.sh
+
+USER appuser
+
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
-
-# Start the application
-CMD ["node", "dist/index.js"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

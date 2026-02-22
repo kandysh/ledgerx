@@ -2,8 +2,8 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import fp from "fastify-plugin";
 import { FastifyInstance } from "fastify";
-import * as schema from "./schema";
-import { env } from "../configs/env";
+import * as schema from "./schema.js";
+import { env } from "../configs/env.js";
 
 export type Database = ReturnType<typeof drizzle<typeof schema>>;
 

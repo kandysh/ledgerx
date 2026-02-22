@@ -26,12 +26,14 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://ledgerx_user:ledgerx_pass@db:5432/ledgerx_db
-      API_KEY: ${API_KEY:-changeme}
+      API_KEY: my-sekret-key
+      REFERRAL_BONUS_AMOUNT: 100
+      REFERRAL_BONUS_ASSET_SYMBOL: GOLD
+
     depends_on:
       db:
         condition: service_healthy
     stop_grace_period: 15s
-    command: sh -c "node dist/db/migrate.js && node dist/db/seed.js && node dist/index.js"
 
 volumes:
   postgres_data:

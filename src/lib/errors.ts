@@ -1,4 +1,4 @@
-import type { Transaction } from "../db/schema";
+import type { Transaction } from "../db/schema.js";
 
 export class InsufficientFundsError extends Error {
   readonly statusCode = 422;

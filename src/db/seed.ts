@@ -1,16 +1,15 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { and, eq } from "drizzle-orm";
 import { Pool } from "pg";
-import * as schema from "./schema";
-import { accounts, assetTypes, users } from "./schema";
+import * as schema from "./schema.js";
+import { accounts, assetTypes, users } from "./schema.js";
 import {
   createTransaction,
   payReferralBonus,
-} from "../modules/wallet/wallet.service";
-import { IdempotentReplayError } from "../lib/errors";
-import { env } from "../configs/env";
+} from "../modules/wallet/wallet.service.js";
+import { IdempotentReplayError } from "../lib/errors.js";
 
-const pool = new Pool({ connectionString: env.DATABASE_URL });
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool, { schema });
 
 async function findOrCreateAccount(
