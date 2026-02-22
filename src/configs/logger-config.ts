@@ -1,4 +1,4 @@
-import { env } from "../configs/env";
+import { env } from "./env";
 
 export const envLogger = {
   development: {

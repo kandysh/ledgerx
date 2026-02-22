@@ -1,12 +1,13 @@
 CREATE TABLE "accounts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" uuid NOT NULL,
+	"owner_id" text NOT NULL,
+	"owner_type" text NOT NULL,
 	"asset_type_id" uuid NOT NULL,
-	"balance" numeric(20, 4) DEFAULT 0,
+	"balance" numeric(20, 4) DEFAULT 0 NOT NULL,
 	"is_system" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "postive_balance" CHECK ("accounts"."balance">= 0)
+	CONSTRAINT "positive_balance" CHECK ("accounts"."balance" >= 0)
 );
 --> statement-breakpoint
 CREATE TABLE "asset_types" (
@@ -27,7 +28,7 @@ CREATE TABLE "ledger_entries" (
 	"direction" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "positive_amount" CHECK ("ledger_entries"."amount">= 0)
+	CONSTRAINT "positive_amount" CHECK ("ledger_entries"."amount" > 0)
 );
 --> statement-breakpoint
 CREATE TABLE "transactions" (
@@ -46,12 +47,17 @@ CREATE TABLE "users" (
 	"email" text NOT NULL,
 	"name" text NOT NULL,
 	"active" boolean DEFAULT true NOT NULL,
+	"referral_code" text NOT NULL,
+	"referred_by_id" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "users_email_unique" UNIQUE("email")
+	CONSTRAINT "users_email_unique" UNIQUE("email"),
+	CONSTRAINT "users_referral_code_unique" UNIQUE("referral_code")
 );
 --> statement-breakpoint
-ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_asset_type_id_asset_types_id_fk" FOREIGN KEY ("asset_type_id") REFERENCES "public"."asset_types"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "ledger_entries" ADD CONSTRAINT "ledger_entries_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "ledger_entries" ADD CONSTRAINT "ledger_entries_transaction_id_transactions_id_fk" FOREIGN KEY ("transaction_id") REFERENCES "public"."transactions"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "ledger_entries" ADD CONSTRAINT "ledger_entries_transaction_id_transactions_id_fk" FOREIGN KEY ("transaction_id") REFERENCES "public"."transactions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "accounts_owner_id_asset_type_id_idx" ON "accounts" USING btree ("owner_id","asset_type_id");--> statement-breakpoint
+CREATE INDEX "ledger_entries_account_id_idx" ON "ledger_entries" USING btree ("account_id");--> statement-breakpoint
+CREATE INDEX "ledger_entries_transaction_id_idx" ON "ledger_entries" USING btree ("transaction_id");

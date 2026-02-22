@@ -1,5 +1,5 @@
 {
-  "id": "08a69dd7-731b-4ad5-a8d5-0e51e29eefde",
+  "id": "3972dcec-f442-4835-b22d-941a0610e21a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -15,9 +15,15 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
+        "owner_id": {
+          "name": "owner_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner_type": {
+          "name": "owner_type",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -31,7 +37,7 @@
           "name": "balance",
           "type": "numeric(20, 4)",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": 0
         },
         "is_system": {
@@ -56,21 +62,30 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "accounts_owner_id_asset_type_id_idx": {
+          "name": "accounts_owner_id_asset_type_id_idx",
+          "columns": [
+            {
+              "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "asset_type_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
-        "accounts_user_id_users_id_fk": {
-          "name": "accounts_user_id_users_id_fk",
-          "tableFrom": "accounts",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
         "accounts_asset_type_id_asset_types_id_fk": {
           "name": "accounts_asset_type_id_asset_types_id_fk",
           "tableFrom": "accounts",
@@ -89,9 +104,9 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
-        "postive_balance": {
-          "name": "postive_balance",
-          "value": "\"accounts\".\"balance\">= 0"
+        "positive_balance": {
+          "name": "positive_balance",
+          "value": "\"accounts\".\"balance\" >= 0"
         }
       },
       "isRLSEnabled": false
@@ -207,7 +222,38 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "ledger_entries_account_id_idx": {
+          "name": "ledger_entries_account_id_idx",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ledger_entries_transaction_id_idx": {
+          "name": "ledger_entries_transaction_id_idx",
+          "columns": [
+            {
+              "expression": "transaction_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "ledger_entries_account_id_accounts_id_fk": {
           "name": "ledger_entries_account_id_accounts_id_fk",
@@ -242,7 +288,7 @@
       "checkConstraints": {
         "positive_amount": {
           "name": "positive_amount",
-          "value": "\"ledger_entries\".\"amount\">= 0"
+          "value": "\"ledger_entries\".\"amount\" > 0"
         }
       },
       "isRLSEnabled": false
@@ -345,6 +391,18 @@
           "notNull": true,
           "default": true
         },
+        "referral_code": {
+          "name": "referral_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "referred_by_id": {
+          "name": "referred_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -369,6 +427,13 @@
           "nullsNotDistinct": false,
           "columns": [
             "email"
+          ]
+        },
+        "users_referral_code_unique": {
+          "name": "users_referral_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "referral_code"
           ]
         }
       },

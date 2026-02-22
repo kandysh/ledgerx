@@ -1,7 +1,9 @@
+import { randomBytes } from "node:crypto";
 import { InferSelectModel, relations, sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  index,
   jsonb,
   numeric,
   pgTable,
@@ -19,11 +21,17 @@ const timeStamps = {
     .defaultNow()
     .$onUpdate(() => new Date()),
 };
+
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   active: boolean("active").notNull().default(true),
+  referralCode: text("referral_code")
+    .notNull()
+    .unique()
+    .$defaultFn(() => randomBytes(4).toString("hex").toUpperCase()),
+  referredById: uuid("referred_by_id"),
   ...timeStamps,
 });
 
@@ -49,9 +57,8 @@ export const accounts = pgTable(
   "accounts",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id),
+    ownerId: text("owner_id").notNull(),
+    ownerType: text("owner_type", { enum: ["user", "system"] }).notNull(),
     assetTypeId: uuid("asset_type_id")
       .notNull()
       .references(() => assetTypes.id),
@@ -59,11 +66,16 @@ export const accounts = pgTable(
       precision: 20,
       scale: 4,
       mode: "number",
-    }).default(0),
+    })
+      .notNull()
+      .default(0),
     isSystem: boolean("is_system").notNull().default(false),
     ...timeStamps,
   },
-  (t) => [check("postive_balance", sql`${t.balance}>= 0`)],
+  (t) => [
+    check("positive_balance", sql`${t.balance} >= 0`),
+    index("accounts_owner_id_asset_type_id_idx").on(t.ownerId, t.assetTypeId),
+  ],
 );
 
 export const ledgerEntries = pgTable(
@@ -81,14 +93,22 @@ export const ledgerEntries = pgTable(
       scale: 4,
       mode: "number",
     }).notNull(),
-    direction: text("direction", { enum: ["debit", "credit"] }).notNull(),
+    direction: text("direction", { enum: ["DEBIT", "CREDIT"] }).notNull(),
     ...timeStamps,
   },
-  (t) => [check("positive_amount", sql`${t.amount}>= 0`)],
+  (t) => [
+    check("positive_amount", sql`${t.amount} > 0`),
+    index("ledger_entries_account_id_idx").on(t.accountId),
+    index("ledger_entries_transaction_id_idx").on(t.transactionId),
+  ],
 );
 
-export const usersRelations = relations(users, ({ many }) => ({
-  accounts: many(accounts),
+export const usersRelations = relations(users, ({ one }) => ({
+  referredBy: one(users, {
+    fields: [users.referredById],
+    references: [users.id],
+    relationName: "referrals",
+  }),
 }));
 
 export const assetTypesRelations = relations(assetTypes, ({ many }) => ({
@@ -96,7 +116,6 @@ export const assetTypesRelations = relations(assetTypes, ({ many }) => ({
 }));
 
 export const accountsRelations = relations(accounts, ({ one, many }) => ({
-  user: one(users, { fields: [accounts.userId], references: [users.id] }),
   assetType: one(assetTypes, {
     fields: [accounts.assetTypeId],
     references: [assetTypes.id],

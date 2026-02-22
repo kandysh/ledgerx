@@ -1,22 +1,16 @@
-version: "3.8"
-
 services:
   db:
     image: postgres:latest
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-ledgerx_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ledgerx_pass}
-      POSTGRES_DB: ${POSTGRES_DB:-ledgerx_db}
+      POSTGRES_USER: ledgerx_user
+      POSTGRES_PASSWORD: ledgerx_pass
+      POSTGRES_DB: ledgerx_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/18/data
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-ledgerx_user} -d ${POSTGRES_DB:-ledgerx_db}",
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ledgerx_user -d ledgerx_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,27 +25,13 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-ledgerx_user}:${POSTGRES_PASSWORD:-ledgerx_pass}@db:5432/${POSTGRES_DB:-ledgerx_db}
-      HOST: 0.0.0.0
-      PORT: 3000
+      DATABASE_URL: postgresql://ledgerx_user:ledgerx_pass@db:5432/ledgerx_db
+      API_KEY: ${API_KEY:-changeme}
     depends_on:
       db:
         condition: service_healthy
     stop_grace_period: 15s
-
-  migrate:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: builder
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-ledgerx_user}:${POSTGRES_PASSWORD:-ledgerx_pass}@db:5432/${POSTGRES_DB:-ledgerx_db}
-    command: pnpm run db:migrate
-    depends_on:
-      db:
-        condition: service_healthy
-    profiles:
-      - migrate
+    command: sh -c "node dist/db/migrate.js && node dist/db/seed.js && node dist/index.js"
 
 volumes:
   postgres_data:

@@ -1,6 +1,8 @@
+import "dotenv/config";
 import z from "zod";
 
 const envSchema = z.object({
+  API_KEY: z.string().default("your-api-key-here"),
   DATABASE_URL: z
     .url()
     .default(
@@ -18,6 +20,11 @@ const envSchema = z.object({
   HOST: z.string().default("localhost"),
   CORS_ORIGIN: z.string().default("*"),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+  REFERRAL_BONUS_AMOUNT: z
+    .string()
+    .default("100")
+    .transform((v) => parseInt(v, 10)),
+  REFERRAL_BONUS_ASSET_SYMBOL: z.string().default("GOLD"),
 });
 
 type Env = z.infer<typeof envSchema>;

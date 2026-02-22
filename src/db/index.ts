@@ -3,11 +3,12 @@ import { Pool } from "pg";
 import fp from "fastify-plugin";
 import { FastifyInstance } from "fastify";
 import * as schema from "./schema";
+import { env } from "../configs/env";
 
-type Database = ReturnType<typeof drizzle<typeof schema>>;
+export type Database = ReturnType<typeof drizzle<typeof schema>>;
 
 async function drizzlePlugin(fastify: FastifyInstance) {
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = env.DATABASE_URL;
   if (!databaseUrl) {
     throw new Error("DATABASE_URL environment variable is not set");
   }

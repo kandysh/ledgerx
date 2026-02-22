@@ -1,3 +1,9 @@
-# LedgerX - Fastify Backend
+### Quick Start (Docker)
 
-A modern, production-ready Fastify backend with TypeScript.
+```bash
+# Clone and start everything
+cp .env.example .env
+docker compose up --build
+```
+
+This runs migrations, seeds the database, and starts the API on port 3000.
