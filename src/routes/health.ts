@@ -1,9 +1,9 @@
-import { FastifyInstance } from 'fastify';
-import { sql } from 'drizzle-orm';
+import { FastifyInstance } from "fastify";
+import { sql } from "drizzle-orm";
 
 export async function healthRoutes(fastify: FastifyInstance) {
-  fastify.get('/health', async (_request, reply) => {
-    let dbStatus = 'ok';
+  fastify.get("/", async (_request, reply) => {
+    let dbStatus = "ok";
     let dbLatencyMs = 0;
 
     try {
@@ -11,12 +11,12 @@ export async function healthRoutes(fastify: FastifyInstance) {
       await fastify.db.execute(sql`SELECT 1`);
       dbLatencyMs = Math.round(performance.now() - start);
     } catch (error) {
-      dbStatus = 'degraded';
+      dbStatus = "degraded";
       reply.statusCode = 503;
     }
 
     return {
-      status: dbStatus === 'ok' ? 'ok' : 'degraded',
+      status: dbStatus === "ok" ? "ok" : "degraded",
       timestamp: new Date().toISOString(),
       db: {
         status: dbStatus,

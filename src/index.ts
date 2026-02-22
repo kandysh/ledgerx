@@ -11,7 +11,6 @@ const fastify = Fastify({
   logger: envLogger[env.NODE_ENV],
 });
 
-// Register plugins
 await fastify.register(fastifyHelmet);
 await fastify.register(fastifyCors, {
   origin: env.CORS_ORIGIN,
@@ -20,10 +19,8 @@ await fastify.register(fastifyCors, {
 await fastify.register(fastifySensible);
 await fastify.register(drizzlePluginWithResolver);
 
-// Register routes
-await fastify.register(healthRoutes, { prefix: "/api" });
+await fastify.register(healthRoutes, { prefix: "/health" });
 
-// Graceful shutdown handlers
 process.on("SIGTERM", async () => {
   fastify.log.info("SIGTERM received, gracefully shutting down");
   await fastify.close();
@@ -36,7 +33,6 @@ process.on("SIGINT", async () => {
   process.exit(0);
 });
 
-// Start server
 try {
   await fastify.listen({ port: env.PORT, host: env.HOST });
 } catch (err) {

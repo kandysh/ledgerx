@@ -9,7 +9,12 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
-  PORT: z.number().min(1).max(65535).default(3000),
+  PORT: z
+    .string()
+    .min(1)
+    .max(65535)
+    .default("3000")
+    .transform((value) => parseInt(value)),
   HOST: z.string().default("localhost"),
   CORS_ORIGIN: z.string().default("*"),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),

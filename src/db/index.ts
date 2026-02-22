@@ -1,37 +1,46 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import fp from 'fastify-plugin';
-import { FastifyInstance } from 'fastify';
-import * as schema from './schema.js';
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+import fp from "fastify-plugin";
+import { FastifyInstance } from "fastify";
+import * as schema from "./schema";
 
 type Database = ReturnType<typeof drizzle<typeof schema>>;
-
-let dbClient: postgres.Sql;
-let db: Database;
 
 async function drizzlePlugin(fastify: FastifyInstance) {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
-    throw new Error('DATABASE_URL environment variable is not set');
+    throw new Error("DATABASE_URL environment variable is not set");
   }
 
-  dbClient = postgres(databaseUrl);
-  db = drizzle(dbClient, { schema });
+  const pool = new Pool({
+    connectionString: databaseUrl,
+    max: 10,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 5_000,
+  });
 
-  // Register graceful shutdown
-  fastify.addHook('onClose', async () => {
-    await dbClient.end({ timeout: 5 });
+  const db = drizzle(pool, {
+    schema,
+    logger: {
+      logQuery(query: string, params: unknown[]) {
+        fastify.log.debug({ query, params }, "db query");
+      },
+    },
+  });
+
+  fastify.decorate("db", db);
+
+  fastify.addHook("onClose", async () => {
+    await pool.end();
   });
 }
 
-declare module 'fastify' {
+declare module "fastify" {
   interface FastifyInstance {
     db: Database;
   }
 }
 
 export const drizzlePluginWithResolver = fp(drizzlePlugin, {
-  name: 'drizzle',
+  name: "drizzle",
 });
-
-export { db, dbClient };
