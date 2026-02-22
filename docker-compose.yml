@@ -29,6 +29,7 @@ services:
       API_KEY: my-sekret-key
       REFERRAL_BONUS_AMOUNT: 100
       REFERRAL_BONUS_ASSET_SYMBOL: GOLD
+      CORS: "*"
 
     depends_on:
       db:
