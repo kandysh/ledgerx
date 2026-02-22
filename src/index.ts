@@ -1,45 +1,44 @@
-import Fastify from 'fastify';
-import fastifyCors from '@fastify/cors';
-import fastifyHelmet from '@fastify/helmet';
-import fastifySensible from '@fastify/sensible';
-import { drizzlePluginWithResolver } from './db/index.js';
-import { healthRoutes } from './routes/health.js';
-
-const PORT = parseInt(process.env.PORT || '3000', 10);
-const HOST = process.env.HOST || '0.0.0.0';
+import Fastify from "fastify";
+import fastifyCors from "@fastify/cors";
+import fastifyHelmet from "@fastify/helmet";
+import fastifySensible from "@fastify/sensible";
+import { drizzlePluginWithResolver } from "./db/index.js";
+import { healthRoutes } from "./routes/health.js";
+import { env } from "./lib/configs/env.js";
+import { envLogger } from "./lib/utils/env-logger.js";
 
 const fastify = Fastify({
-  logger: true,
+  logger: envLogger[env.NODE_ENV],
 });
 
 // Register plugins
 await fastify.register(fastifyHelmet);
 await fastify.register(fastifyCors, {
-  origin: process.env.CORS_ORIGIN || true,
+  origin: env.CORS_ORIGIN,
   credentials: true,
 });
 await fastify.register(fastifySensible);
 await fastify.register(drizzlePluginWithResolver);
 
 // Register routes
-await fastify.register(healthRoutes, { prefix: '/api' });
+await fastify.register(healthRoutes, { prefix: "/api" });
 
 // Graceful shutdown handlers
-process.on('SIGTERM', async () => {
-  fastify.log.info('SIGTERM received, gracefully shutting down');
+process.on("SIGTERM", async () => {
+  fastify.log.info("SIGTERM received, gracefully shutting down");
   await fastify.close();
   process.exit(0);
 });
 
-process.on('SIGINT', async () => {
-  fastify.log.info('SIGINT received, gracefully shutting down');
+process.on("SIGINT", async () => {
+  fastify.log.info("SIGINT received, gracefully shutting down");
   await fastify.close();
   process.exit(0);
 });
 
 // Start server
 try {
-  await fastify.listen({ port: PORT, host: HOST });
+  await fastify.listen({ port: env.PORT, host: env.HOST });
 } catch (err) {
   fastify.log.error(err);
   process.exit(1);
